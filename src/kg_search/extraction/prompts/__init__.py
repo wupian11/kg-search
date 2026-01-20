@@ -1,0 +1,11 @@
+"""提示词模板模块"""
+
+from .entity_prompt import ENTITY_EXTRACTION_PROMPT, ENTITY_TYPES
+from .relation_prompt import RELATION_EXTRACTION_PROMPT, RELATION_TYPES
+
+__all__ = [
+    "ENTITY_EXTRACTION_PROMPT",
+    "ENTITY_TYPES",
+    "RELATION_EXTRACTION_PROMPT",
+    "RELATION_TYPES",
+]
