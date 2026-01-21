@@ -11,9 +11,16 @@ from fastapi.security import APIKeyHeader
 
 from kg_search.config import get_settings
 from kg_search.extraction import GraphBuilder
+from kg_search.graphrag import GraphRAGAdapter
 from kg_search.indexing import ChromaVectorStore, DocumentStore, Neo4jGraphStore
 from kg_search.ingestion import IngestionPipeline
-from kg_search.llm import AnswerGenerator, create_llm_client, create_embedding_service, LLMClient, EmbeddingService
+from kg_search.llm import (
+    AnswerGenerator,
+    EmbeddingService,
+    LLMClient,
+    create_embedding_service,
+    create_llm_client,
+)
 from kg_search.retrieval import GraphRetriever, HybridRetriever, VectorRetriever
 from kg_search.retrieval.strategies import GlobalSearch, LocalSearch
 from kg_search.utils import get_logger
@@ -60,6 +67,13 @@ async def init_services() -> None:
         graph_builder = GraphBuilder(llm_client)
         answer_generator = AnswerGenerator(llm_client)
 
+        # GraphRAG适配器
+        graphrag_adapter = GraphRAGAdapter(
+            llm_client=llm_client,
+            vector_retriever=vector_retriever,
+            graph_store=graph_store,
+        )
+
         _services = {
             "settings": settings,
             "llm_client": llm_client,
@@ -75,6 +89,7 @@ async def init_services() -> None:
             "ingestion_pipeline": ingestion_pipeline,
             "graph_builder": graph_builder,
             "answer_generator": answer_generator,
+            "graphrag_adapter": graphrag_adapter,
         }
 
         logger.info("All services initialized successfully")
@@ -205,6 +220,11 @@ def get_answer_generator() -> AnswerGenerator:
     return _services["answer_generator"]
 
 
+def get_graphrag_adapter() -> GraphRAGAdapter:
+    """获取GraphRAG适配器"""
+    return _services["graphrag_adapter"]
+
+
 # 类型别名
 LLMClientDep = Annotated[LLMClient, Depends(get_llm_client)]
 EmbeddingServiceDep = Annotated[EmbeddingService, Depends(get_embedding_service)]
@@ -219,4 +239,5 @@ GlobalSearchDep = Annotated[GlobalSearch, Depends(get_global_search)]
 IngestionPipelineDep = Annotated[IngestionPipeline, Depends(get_ingestion_pipeline)]
 GraphBuilderDep = Annotated[GraphBuilder, Depends(get_graph_builder)]
 AnswerGeneratorDep = Annotated[AnswerGenerator, Depends(get_answer_generator)]
+GraphRAGAdapterDep = Annotated[GraphRAGAdapter, Depends(get_graphrag_adapter)]
 ApiKeyDep = Annotated[bool, Depends(verify_api_key)]

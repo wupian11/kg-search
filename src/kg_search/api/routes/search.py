@@ -9,6 +9,7 @@ from kg_search.api.dependencies import (
     AnswerGeneratorDep,
     ApiKeyDep,
     GlobalSearchDep,
+    GraphRAGAdapterDep,
     GraphRetrieverDep,
     HybridRetrieverDep,
     LocalSearchDep,
@@ -314,3 +315,98 @@ async def ask_question(
     except Exception as e:
         logger.error("Question answering failed", error=str(e))
         raise HTTPException(status_code=500, detail=f"问答失败: {str(e)}")
+
+
+# ==================== GraphRAG专用接口 ====================
+
+
+@router.post("/graphrag/search")
+async def graphrag_hybrid_search(
+    request: QuestionRequest,
+    _: ApiKeyDep,
+    graphrag_adapter: GraphRAGAdapterDep,
+):
+    """
+    GraphRAG混合检索接口
+
+    自动判断问题类型，结合Global Search和Local Search
+    """
+    try:
+        result = await graphrag_adapter.hybrid_search(
+            query=request.question,
+            top_k=request.top_k,
+            use_global=True,
+            use_local=True,
+        )
+
+        return {
+            "question": request.question,
+            "answer": result.get("combined_answer", ""),
+            "global_result": result.get("global_result"),
+            "local_result": result.get("local_result"),
+        }
+
+    except Exception as e:
+        logger.error("GraphRAG hybrid search failed", error=str(e))
+        raise HTTPException(status_code=500, detail=f"GraphRAG检索失败: {str(e)}")
+
+
+@router.post("/graphrag/global")
+async def graphrag_global_search(
+    request: QuestionRequest,
+    _: ApiKeyDep,
+    graphrag_adapter: GraphRAGAdapterDep,
+):
+    """
+    GraphRAG Global Search接口
+
+    基于社区层级的Map-Reduce搜索，适用于宏观问题
+    """
+    try:
+        result = await graphrag_adapter.global_search(
+            query=request.question,
+            response_type="多段落",
+        )
+
+        return {
+            "question": request.question,
+            "answer": result.get("answer", ""),
+            "sources": result.get("sources", []),
+            "community_count": result.get("community_count", 0),
+        }
+
+    except Exception as e:
+        logger.error("GraphRAG global search failed", error=str(e))
+        raise HTTPException(status_code=500, detail=f"GraphRAG Global Search失败: {str(e)}")
+
+
+@router.post("/graphrag/local")
+async def graphrag_local_search(
+    request: QuestionRequest,
+    _: ApiKeyDep,
+    graphrag_adapter: GraphRAGAdapterDep,
+):
+    """
+    GraphRAG Local Search接口
+
+    基于实体及其邻域的精确搜索，适用于具体问题
+    """
+    try:
+        result = await graphrag_adapter.local_search(
+            query=request.question,
+            top_k=request.top_k,
+            include_neighbors=True,
+            neighbor_depth=2,
+        )
+
+        return {
+            "question": request.question,
+            "answer": result.get("answer", ""),
+            "entities": result.get("entities", []),
+            "relationships": result.get("relationships", []),
+            "chunks": result.get("chunks", []),
+        }
+
+    except Exception as e:
+        logger.error("GraphRAG local search failed", error=str(e))
+        raise HTTPException(status_code=500, detail=f"GraphRAG Local Search失败: {str(e)}")

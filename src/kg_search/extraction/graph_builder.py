@@ -90,16 +90,35 @@ class KnowledgeGraph:
 class GraphBuilder:
     """知识图谱构建器"""
 
-    def __init__(self, llm_client: Any):
+    def __init__(self, llm_client: Any, use_graphrag: bool | None = None):
         """
         初始化图谱构建器
 
         Args:
             llm_client: LLM客户端实例
+            use_graphrag: 是否使用GraphRAG风格抽取器（None表示从配置读取）
         """
+        from kg_search.config import get_settings
+
         self.llm_client = llm_client
-        self.entity_extractor = EntityExtractor(llm_client)
-        self.relation_extractor = RelationExtractor(llm_client)
+
+        settings = get_settings()
+        self._use_graphrag = (
+            use_graphrag if use_graphrag is not None else settings.use_graphrag_extractor
+        )
+
+        if self._use_graphrag:
+            # 使用GraphRAG风格抽取器
+            from kg_search.graphrag import GraphRAGEntityExtractor, GraphRAGRelationExtractor
+
+            self.entity_extractor = GraphRAGEntityExtractor(llm_client)
+            self.relation_extractor = GraphRAGRelationExtractor(llm_client)
+            logger.info("GraphBuilder using GraphRAG extractors")
+        else:
+            # 使用原生抽取器
+            self.entity_extractor = EntityExtractor(llm_client)
+            self.relation_extractor = RelationExtractor(llm_client)
+            logger.info("GraphBuilder using native extractors")
 
     async def build_from_documents(
         self,

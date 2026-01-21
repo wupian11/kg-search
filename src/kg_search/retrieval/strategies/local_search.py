@@ -6,6 +6,7 @@ GraphRAG Local Search
 
 from typing import Any
 
+from kg_search.config import get_settings
 from kg_search.retrieval.graph_retriever import GraphRetriever
 from kg_search.retrieval.vector_retriever import RetrievalResult, VectorRetriever
 from kg_search.utils import get_logger
@@ -21,6 +22,10 @@ class LocalSearch:
     - "四羊方尊是什么朝代的？"
     - "这件文物的材质是什么？"
     - "和这件文物同时期的还有什么？"
+
+    支持两种模式：
+    1. 原生模式：使用自研的检索和生成
+    2. GraphRAG模式：使用GraphRAG适配器的实现
     """
 
     def __init__(
@@ -28,6 +33,7 @@ class LocalSearch:
         vector_retriever: VectorRetriever,
         graph_retriever: GraphRetriever,
         llm_client: Any,
+        use_graphrag: bool | None = None,
     ):
         """
         初始化Local Search
@@ -36,10 +42,29 @@ class LocalSearch:
             vector_retriever: 向量检索器
             graph_retriever: 图检索器
             llm_client: LLM客户端
+            use_graphrag: 是否使用GraphRAG模式（None表示从配置读取）
         """
         self.vector_retriever = vector_retriever
         self.graph_retriever = graph_retriever
         self.llm_client = llm_client
+
+        settings = get_settings()
+        self._use_graphrag = (
+            use_graphrag if use_graphrag is not None else settings.use_graphrag_searcher
+        )
+
+        if self._use_graphrag:
+            from kg_search.graphrag import GraphRAGLocalSearcher
+
+            self._graphrag_searcher = GraphRAGLocalSearcher(
+                vector_retriever=vector_retriever,
+                graph_store=graph_retriever.graph_store,
+                llm_client=llm_client,
+            )
+            logger.info("LocalSearch using GraphRAG mode")
+        else:
+            self._graphrag_searcher = None
+            logger.info("LocalSearch using native mode")
 
     async def search(
         self,
@@ -60,6 +85,16 @@ class LocalSearch:
         Returns:
             搜索结果，包含实体、关系和文本块
         """
+        # 如果使用GraphRAG模式
+        if self._use_graphrag and self._graphrag_searcher:
+            return await self._graphrag_searcher.search(
+                query,
+                top_k=top_k,
+                include_neighbors=include_neighbors,
+                neighbor_depth=neighbor_depth,
+            )
+
+        # 原生模式
         results = {
             "query": query,
             "entities": [],

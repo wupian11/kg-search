@@ -90,6 +90,10 @@ class Settings(BaseSettings):
     community_max_size: int = 100
     community_summary_max_tokens: int = 500
 
+    # GraphRAG模式开关
+    use_graphrag_extractor: bool = Field(default=True, description="是否使用GraphRAG风格的抽取器")
+    use_graphrag_searcher: bool = Field(default=True, description="是否使用GraphRAG风格的搜索器")
+
     # ============ 数据目录 ============
     data_dir: str = "./data"
     raw_data_dir: str = "./data/raw"
@@ -124,12 +128,20 @@ class Settings(BaseSettings):
     @property
     def current_embedding_model(self) -> str:
         """获取当前Embedding模型名称"""
-        return self.glm_embedding_model if self.embedding_provider == "glm" else self.openai_embedding_model
+        return (
+            self.glm_embedding_model
+            if self.embedding_provider == "glm"
+            else self.openai_embedding_model
+        )
 
     @property
     def current_embedding_dimensions(self) -> int:
         """获取当前Embedding向量维度"""
-        return self.glm_embedding_dimensions if self.embedding_provider == "glm" else self.openai_embedding_dimensions
+        return (
+            self.glm_embedding_dimensions
+            if self.embedding_provider == "glm"
+            else self.openai_embedding_dimensions
+        )
 
 
 @lru_cache

@@ -35,6 +35,9 @@ dependencies = [
     "networkx>=3.2.0",
     "graspologic>=3.3.0",
     "numpy>=1.26.0",
+    
+    # GraphRAG核心库
+    "graphrag>=0.5.0",
 ]
 
 [project.optional-dependencies]

@@ -49,18 +49,37 @@ class GlobalSearch:
     - "中国青铜器的发展历程是怎样的？"
     - "商周时期的主要文物类型有哪些？"
     - "不同朝代的玉器有什么特点？"
+
+    支持两种模式：
+    1. 原生模式：使用自研的社区检测和摘要生成
+    2. GraphRAG模式：使用GraphRAG适配器的实现
     """
 
-    def __init__(self, llm_client: Any):
+    def __init__(self, llm_client: Any, use_graphrag: bool | None = None):
         """
         初始化Global Search
 
         Args:
             llm_client: LLM客户端
+            use_graphrag: 是否使用GraphRAG模式（None表示从配置读取）
         """
         self.llm_client = llm_client
         self.settings = get_settings()
         self.communities: list[Community] = []
+
+        # 判断是否使用GraphRAG
+        self._use_graphrag = (
+            use_graphrag if use_graphrag is not None else self.settings.use_graphrag_searcher
+        )
+
+        if self._use_graphrag:
+            from kg_search.graphrag import GraphRAGGlobalSearcher
+
+            self._graphrag_searcher = GraphRAGGlobalSearcher(llm_client)
+            logger.info("GlobalSearch using GraphRAG mode")
+        else:
+            self._graphrag_searcher = None
+            logger.info("GlobalSearch using native mode")
 
     async def build_communities(
         self,
@@ -276,6 +295,18 @@ class GlobalSearch:
         Returns:
             搜索结果
         """
+        # 如果使用GraphRAG模式
+        if self._use_graphrag and self._graphrag_searcher:
+            result = await self._graphrag_searcher.search(query)
+            # 转换为统一格式
+            return {
+                "query": query,
+                "communities": result.get("sources", []),
+                "context": "",
+                "answer": result.get("answer", ""),
+            }
+
+        # 原生模式
         if not self.communities:
             logger.warning("No communities available for global search")
             return {

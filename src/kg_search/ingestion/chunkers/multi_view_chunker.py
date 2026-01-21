@@ -4,8 +4,6 @@
 为同一文物创建多个视图的embedding，支持多维度检索
 """
 
-from dataclasses import dataclass
-from enum import Enum
 from typing import Any
 
 from kg_search.ingestion.chunkers.base import Chunk, ViewType
