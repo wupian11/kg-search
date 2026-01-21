@@ -45,9 +45,9 @@ def sample_document() -> Document:
             "name": "四羊方尊",
             "dynasty": "商代",
             "material": "青铜",
-            "museum": "中国国家博物馆"
+            "museum": "中国国家博物馆",
         },
-        source="test.json"
+        source="test.json",
     )
 
 
@@ -81,28 +81,18 @@ def sample_entities() -> list[Entity]:
             name="四羊方尊",
             type="文物",
             description="商代晚期青铜礼器",
-            properties={"category": "酒器"}
+            properties={"category": "酒器"},
         ),
         Entity(
-            id="entity_002",
-            name="商代",
-            type="朝代",
-            description="中国历史朝代",
-            properties={}
+            id="entity_002", name="商代", type="朝代", description="中国历史朝代", properties={}
         ),
-        Entity(
-            id="entity_003",
-            name="青铜",
-            type="材质",
-            description="铜合金材料",
-            properties={}
-        ),
+        Entity(id="entity_003", name="青铜", type="材质", description="铜合金材料", properties={}),
         Entity(
             id="entity_004",
             name="中国国家博物馆",
             type="收藏机构",
             description="位于北京的国家级博物馆",
-            properties={}
+            properties={},
         ),
     ]
 
@@ -116,35 +106,31 @@ def sample_relations(sample_entities: list[Entity]) -> list[Relation]:
             source=sample_entities[0].id,
             target=sample_entities[1].id,
             type="属于朝代",
-            properties={}
+            properties={},
         ),
         Relation(
             id="rel_002",
             source=sample_entities[0].id,
             target=sample_entities[2].id,
             type="材质为",
-            properties={}
+            properties={},
         ),
         Relation(
             id="rel_003",
             source=sample_entities[0].id,
             target=sample_entities[3].id,
             type="收藏于",
-            properties={}
+            properties={},
         ),
     ]
 
 
 @pytest.fixture
 def sample_knowledge_graph(
-    sample_entities: list[Entity],
-    sample_relations: list[Relation]
+    sample_entities: list[Entity], sample_relations: list[Relation]
 ) -> KnowledgeGraph:
     """示例知识图谱"""
-    return KnowledgeGraph(
-        entities=sample_entities,
-        relations=sample_relations
-    )
+    return KnowledgeGraph(entities=sample_entities, relations=sample_relations)
 
 
 @pytest.fixture
@@ -157,17 +143,11 @@ def sample_json_data() -> dict:
                 "basic_info": {
                     "name": "四羊方尊",
                     "dynasty": "商代",
-                    "period": "公元前14世纪-前11世纪"
+                    "period": "公元前14世纪-前11世纪",
                 },
-                "physical_info": {
-                    "material": "青铜",
-                    "technique": "分铸法"
-                },
-                "provenance": {
-                    "excavation_site": "湖南宁乡",
-                    "museum": "中国国家博物馆"
-                },
-                "description": "四羊方尊是商代晚期青铜礼器。"
+                "physical_info": {"material": "青铜", "technique": "分铸法"},
+                "provenance": {"excavation_site": "湖南宁乡", "museum": "中国国家博物馆"},
+                "description": "四羊方尊是商代晚期青铜礼器。",
             }
         ]
     }

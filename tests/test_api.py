@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock
 
 class TestHealthEndpoints:
     """健康检查端点测试"""
-    
+
     def test_health_endpoint(self):
         """测试健康检查"""
         # 需要mock所有依赖后才能创建TestClient
@@ -24,7 +24,7 @@ class TestHealthEndpoints:
 
 class TestIngestEndpoints:
     """数据摄入端点测试"""
-    
+
     def test_ingest_text_without_auth(self):
         """测试无认证摄入（当API_KEY未设置时）"""
         # client = TestClient(app)
@@ -41,7 +41,7 @@ class TestIngestEndpoints:
 
 class TestSearchEndpoints:
     """搜索端点测试"""
-    
+
     def test_search_endpoint(self):
         """测试搜索"""
         # client = TestClient(app)
@@ -54,7 +54,7 @@ class TestSearchEndpoints:
         # )
         # assert response.status_code in [200, 401]
         pass
-    
+
     def test_ask_endpoint(self):
         """测试问答"""
         # client = TestClient(app)

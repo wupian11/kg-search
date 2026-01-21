@@ -23,20 +23,20 @@ async def init_neo4j():
     """初始化Neo4j数据库"""
     settings = get_settings()
     setup_logging(log_level=settings.log_level)
-    
+
     logger.info("Initializing Neo4j database...")
-    
+
     graph_store = Neo4jGraphStore()
-    
+
     try:
         await graph_store.connect()
         await graph_store.init_schema()
         logger.info("Neo4j initialization completed successfully")
-        
+
     except Exception as e:
         logger.error("Neo4j initialization failed", error=str(e))
         raise
-    
+
     finally:
         await graph_store.close()
 
