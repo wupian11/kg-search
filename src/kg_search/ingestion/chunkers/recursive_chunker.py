@@ -1,7 +1,7 @@
 """
-语义分块器
+递归分块器
 
-基于语义边界（段落、句子）进行智能分块
+基于分隔符递归分割文本，适用于长文档
 """
 
 from kg_search.ingestion.loaders.base import Document
@@ -10,8 +10,17 @@ from kg_search.utils import count_tokens
 from .base import Chunk, TextChunker
 
 
-class SemanticChunker(TextChunker):
-    """语义分块器"""
+class RecursiveChunker(TextChunker):
+    """
+    递归分块器
+
+    使用分隔符优先级递归分割文本，适用于：
+    - 长文本文档
+    - Markdown文件
+    - 纯文本文件
+
+    对于结构化数据（JSON等），建议使用 StructureChunker
+    """
 
     # 分隔符优先级（从高到低）
     SEPARATORS = [
@@ -36,19 +45,22 @@ class SemanticChunker(TextChunker):
         chunk_overlap: int = 200,
         max_tokens: int | None = None,
         keep_separator: bool = True,
+        separators: list[str] | None = None,
     ):
         """
-        初始化语义分块器
+        初始化递归分块器
 
         Args:
             chunk_size: 目标块大小（字符数）
             chunk_overlap: 块重叠（字符数）
             max_tokens: 最大token数（如设置则以此为准）
             keep_separator: 是否在块中保留分隔符
+            separators: 自定义分隔符列表（按优先级排序）
         """
         super().__init__(chunk_size, chunk_overlap)
         self.max_tokens = max_tokens
         self.keep_separator = keep_separator
+        self.separators = separators or self.SEPARATORS
 
     def chunk(self, document: Document) -> list[Chunk]:
         """将文档分块"""
@@ -57,7 +69,7 @@ class SemanticChunker(TextChunker):
             return []
 
         # 递归分割文本
-        splits = self._split_text(text, self.SEPARATORS)
+        splits = self._split_text(text, self.separators)
 
         # 合并小块
         merged_chunks = self._merge_splits(splits)

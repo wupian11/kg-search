@@ -10,7 +10,11 @@ import tempfile
 import shutil
 
 from kg_search.config import get_settings, Settings
-from kg_search.utils.models import Document, Chunk, Entity, Relation, KnowledgeGraph
+from kg_search.ingestion.loaders.base import Document
+from kg_search.ingestion.chunkers.base import Chunk
+from kg_search.extraction.entity_extractor import Entity
+from kg_search.extraction.relation_extractor import Relation
+from kg_search.extraction.graph_builder import KnowledgeGraph
 
 
 @pytest.fixture(scope="session")

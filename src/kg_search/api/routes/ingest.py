@@ -1,5 +1,5 @@
 """
-数据摄入接口
+数据提取接口
 """
 
 from pathlib import Path
@@ -70,7 +70,7 @@ async def ingest_text(
 
         return IngestResponse(
             success=True,
-            message="数据摄入成功",
+            message="数据提取成功",
             documents_count=len(documents),
             chunks_count=len(chunks),
             graph_stats=graph_stats,
@@ -78,7 +78,7 @@ async def ingest_text(
 
     except Exception as e:
         logger.error("Text ingestion failed", error=str(e))
-        raise HTTPException(status_code=500, detail=f"摄入失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"提取失败: {str(e)}")
 
 
 @router.post("/ingest/file", response_model=IngestResponse)
@@ -155,7 +155,7 @@ async def ingest_file(
 
         return IngestResponse(
             success=True,
-            message=f"文件 {file.filename} 摄入成功",
+            message=f"文件 {file.filename} 提取成功",
             documents_count=len(documents),
             chunks_count=len(chunks),
             graph_stats=graph_stats,
@@ -165,7 +165,7 @@ async def ingest_file(
         raise HTTPException(status_code=400, detail="文件编码错误，请使用UTF-8编码")
     except Exception as e:
         logger.error("File ingestion failed", error=str(e), filename=file.filename)
-        raise HTTPException(status_code=500, detail=f"摄入失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"提取失败: {str(e)}")
 
 
 @router.post("/ingest/directory", response_model=TaskResponse)
@@ -175,15 +175,15 @@ async def ingest_directory(
     _: ApiKeyDep,
 ):
     """
-    异步摄入目录数据（后台任务）
+    异步提取目录数据（后台任务）
 
-    用于大量数据的批量摄入
+    用于大量数据的批量提取
     """
     # TODO: 实现后台任务处理
     return TaskResponse(
         task_id="not_implemented",
         status="pending",
-        message="目录摄入功能开发中",
+        message="目录提取功能开发中",
     )
 
 

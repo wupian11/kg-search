@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 
 class IngestResponse(BaseModel):
-    """摄入响应"""
+    """提取响应"""
 
     success: bool = Field(..., description="是否成功")
     message: str = Field(..., description="消息")

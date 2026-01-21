@@ -23,10 +23,10 @@ class TestHealthEndpoints:
 
 
 class TestIngestEndpoints:
-    """数据摄入端点测试"""
+    """数据提取端点测试"""
 
     def test_ingest_text_without_auth(self):
-        """测试无认证摄入（当API_KEY未设置时）"""
+        """测试无认证提取（当API_KEY未设置时）"""
         # client = TestClient(app)
         # response = client.post(
         #     "/api/v1/ingest/text",

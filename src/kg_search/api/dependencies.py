@@ -206,7 +206,7 @@ def get_global_search() -> GlobalSearch:
 
 
 def get_ingestion_pipeline() -> IngestionPipeline:
-    """获取摄入管道"""
+    """获取提取管道"""
     return _services["ingestion_pipeline"]
 
 

@@ -2,7 +2,8 @@
 
 from .base import Chunk, TextChunker, ViewType
 from .multi_view_chunker import MultiViewChunker, QueryViewSelector
-from .semantic_chunker import SemanticChunker
+from .recursive_chunker import RecursiveChunker
+from .structure_chunker import StructureChunker
 
 __all__ = [
     # 基础类
@@ -10,7 +11,8 @@ __all__ = [
     "Chunk",
     "ViewType",
     # 分块器实现
-    "SemanticChunker",
+    "RecursiveChunker",
+    "StructureChunker",
     "MultiViewChunker",
     # 查询工具
     "QueryViewSelector",

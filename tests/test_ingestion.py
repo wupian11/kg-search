@@ -1,5 +1,5 @@
 """
-数据摄入层测试
+数据提取层测试
 """
 
 import json
@@ -7,7 +7,7 @@ import pytest
 from pathlib import Path
 
 from kg_search.ingestion.loaders import JSONLoader, JSONLLoader, MarkdownLoader, TextLoader
-from kg_search.ingestion.chunkers import SemanticChunker
+from kg_search.ingestion.chunkers import RecursiveChunker, StructureChunker
 from kg_search.ingestion import IngestionPipeline
 
 
@@ -51,12 +51,12 @@ class TestMarkdownLoader:
         assert "四羊方尊" in documents[0].content
 
 
-class TestSemanticChunker:
-    """语义分块器测试"""
+class TestRecursiveChunker:
+    """递归分块器测试"""
 
     def test_chunk_document(self, sample_document):
         """测试文档分块"""
-        chunker = SemanticChunker(chunk_size=50, chunk_overlap=10)
+        chunker = RecursiveChunker(chunk_size=50, chunk_overlap=10)
 
         chunks = chunker.chunk(sample_document)
 
@@ -65,8 +65,21 @@ class TestSemanticChunker:
         assert all(len(chunk.content) <= 100 for chunk in chunks)  # 允许一定的溢出
 
 
+class TestStructureChunker:
+    """结构化分块器测试"""
+
+    def test_chunk_structured_document(self, sample_document):
+        """测试结构化文档分块"""
+        chunker = StructureChunker(max_tokens=500, strategy="auto")
+
+        chunks = chunker.chunk(sample_document)
+
+        assert len(chunks) > 0
+        assert all(chunk.document_id == sample_document.id for chunk in chunks)
+
+
 class TestIngestionPipeline:
-    """摄入管道测试"""
+    """提取管道测试"""
 
     def test_process_text(self):
         """测试文本处理"""

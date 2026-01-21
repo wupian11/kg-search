@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 
 class IngestTextRequest(BaseModel):
-    """文本摄入请求"""
+    """文本提取请求"""
 
     content: str = Field(..., description="文本内容")
     doc_type: Literal["json", "jsonl", "md", "txt"] = Field(
@@ -26,7 +26,7 @@ class IngestTextRequest(BaseModel):
 
 
 class IngestFileRequest(BaseModel):
-    """文件/目录摄入请求"""
+    """文件/目录提取请求"""
 
     path: str = Field(..., description="文件或目录路径")
     recursive: bool = Field(

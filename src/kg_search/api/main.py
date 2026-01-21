@@ -57,7 +57,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(health.router, tags=["健康检查"])
-app.include_router(ingest.router, prefix="/api/v1", tags=["数据摄入"])
+app.include_router(ingest.router, prefix="/api/v1", tags=["数据提取"])
 app.include_router(search.router, prefix="/api/v1", tags=["检索服务"])
 
 

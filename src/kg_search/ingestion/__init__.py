@@ -1,6 +1,6 @@
-"""数据摄入模块"""
+"""数据提取模块"""
 
-from .chunkers import SemanticChunker, TextChunker
+from .chunkers import RecursiveChunker, StructureChunker, TextChunker
 from .loaders import DocumentLoader, JSONLLoader, JSONLoader, MarkdownLoader, TextLoader
 from .pipeline import IngestionPipeline
 
@@ -12,5 +12,6 @@ __all__ = [
     "MarkdownLoader",
     "TextLoader",
     "TextChunker",
-    "SemanticChunker",
+    "RecursiveChunker",
+    "StructureChunker",
 ]

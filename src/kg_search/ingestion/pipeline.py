@@ -1,43 +1,49 @@
 """
-数据摄入管道
+数据提取管道
 
 协调文档加载、分块和索引构建的完整流程
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from kg_search.config import get_settings
 from kg_search.utils import get_logger
 
-from .chunkers import Chunk, SemanticChunker
+from .chunkers import Chunk, RecursiveChunker, StructureChunker, TextChunker
 from .loaders import Document, DocumentLoader, JSONLLoader, JSONLoader, MarkdownLoader, TextLoader
 
 logger = get_logger(__name__)
 
 
 class IngestionPipeline:
-    """数据摄入管道"""
+    """数据提取管道"""
 
     def __init__(
         self,
         chunk_size: int | None = None,
         chunk_overlap: int | None = None,
         max_tokens: int | None = None,
+        chunker_type: Literal["recursive", "structure", "auto"] = "auto",
     ):
         """
-        初始化摄入管道
+        初始化提取管道
 
         Args:
             chunk_size: 块大小
             chunk_overlap: 块重叠
             max_tokens: 最大token数
+            chunker_type: 分块器类型
+                - recursive: 递归分块（适合长文本）
+                - structure: 结构化分块（适合JSON数据）
+                - auto: 根据文件类型自动选择
         """
         settings = get_settings()
 
         self.chunk_size = chunk_size or settings.chunk_size
         self.chunk_overlap = chunk_overlap or settings.chunk_overlap
         self.max_tokens = max_tokens or settings.max_tokens_per_chunk
+        self.chunker_type = chunker_type
 
         # 初始化加载器
         self.loaders: dict[str, DocumentLoader] = {
@@ -49,11 +55,31 @@ class IngestionPipeline:
         }
 
         # 初始化分块器
-        self.chunker = SemanticChunker(
+        self.recursive_chunker = RecursiveChunker(
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
             max_tokens=self.max_tokens,
         )
+
+        self.structure_chunker = StructureChunker(
+            chunk_size=self.chunk_size,
+            chunk_overlap=0,  # 结构化数据不需要重叠
+            max_tokens=self.max_tokens,
+            strategy="auto",
+        )
+
+    def _get_chunker(self, file_suffix: str) -> TextChunker:
+        """根据配置和文件类型选择分块器"""
+        if self.chunker_type == "recursive":
+            return self.recursive_chunker
+        elif self.chunker_type == "structure":
+            return self.structure_chunker
+        else:  # auto
+            # JSON文件使用结构化分块器
+            if file_suffix.lower() in [".json", ".jsonl"]:
+                return self.structure_chunker
+            else:
+                return self.recursive_chunker
 
     def process_file(self, file_path: str | Path) -> tuple[list[Document], list[Chunk]]:
         """
@@ -81,9 +107,10 @@ class IngestionPipeline:
         documents = loader.load(path)
         logger.info("Loaded documents", count=len(documents))
 
-        # 分块
-        chunks = self.chunker.chunk_documents(documents)
-        logger.info("Created chunks", count=len(chunks))
+        # 选择分块器并分块
+        chunker = self._get_chunker(path.suffix)
+        chunks = chunker.chunk_documents(documents)
+        logger.info("Created chunks", count=len(chunks), chunker=type(chunker).__name__)
 
         return documents, chunks
 
