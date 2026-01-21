@@ -18,7 +18,7 @@ from kg_search.utils import setup_logging, get_logger
 from kg_search.ingestion import IngestionPipeline
 from kg_search.extraction import GraphBuilder
 from kg_search.indexing import ChromaVectorStore, Neo4jGraphStore, DocumentStore
-from kg_search.llm import OpenAIClient, OpenAIEmbedding
+from kg_search.llm import create_llm_client, create_embedding_service
 from kg_search.retrieval.strategies import GlobalSearch
 
 logger = get_logger(__name__)
@@ -42,9 +42,9 @@ async def build_index(
 
     logger.info("Starting index build", data_dir=data_dir)
 
-    # 初始化服务
-    llm_client = OpenAIClient()
-    embedding_service = OpenAIEmbedding()
+    # 初始化服务 (根据配置自动选择 OpenAI 或 GLM)
+    llm_client = create_llm_client()
+    embedding_service = create_embedding_service()
     vector_store = ChromaVectorStore()
     graph_store = Neo4jGraphStore()
     document_store = DocumentStore()

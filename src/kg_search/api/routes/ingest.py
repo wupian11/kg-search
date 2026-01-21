@@ -35,7 +35,7 @@ async def ingest_text(
     document_store: DocumentStoreDep,
 ):
     """
-    摄入文本数据
+    提取文本数据
 
     支持的格式：json, jsonl, md, txt
     """
@@ -94,7 +94,7 @@ async def ingest_file(
     document_store: DocumentStoreDep = None,
 ):
     """
-    摄入文件数据
+    提取文件数据
 
     支持的文件格式：.json, .jsonl, .md, .txt
     """

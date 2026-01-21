@@ -13,7 +13,7 @@ from kg_search.config import get_settings
 from kg_search.extraction import GraphBuilder
 from kg_search.indexing import ChromaVectorStore, DocumentStore, Neo4jGraphStore
 from kg_search.ingestion import IngestionPipeline
-from kg_search.llm import AnswerGenerator, OpenAIClient, OpenAIEmbedding
+from kg_search.llm import AnswerGenerator, create_llm_client, create_embedding_service, LLMClient, EmbeddingService
 from kg_search.retrieval import GraphRetriever, HybridRetriever, VectorRetriever
 from kg_search.retrieval.strategies import GlobalSearch, LocalSearch
 from kg_search.utils import get_logger
@@ -33,9 +33,9 @@ async def init_services() -> None:
     settings = get_settings()
 
     try:
-        # LLM服务
-        llm_client = OpenAIClient()
-        embedding_service = OpenAIEmbedding()
+        # LLM服务 (根据配置自动选择 OpenAI 或 GLM)
+        llm_client = create_llm_client()
+        embedding_service = create_embedding_service()
 
         # 存储服务
         vector_store = ChromaVectorStore()
@@ -140,12 +140,12 @@ async def verify_api_key(
 
 
 # 依赖注入函数
-def get_llm_client() -> OpenAIClient:
+def get_llm_client() -> LLMClient:
     """获取LLM客户端"""
     return _services["llm_client"]
 
 
-def get_embedding_service() -> OpenAIEmbedding:
+def get_embedding_service() -> EmbeddingService:
     """获取Embedding服务"""
     return _services["embedding_service"]
 
@@ -206,8 +206,8 @@ def get_answer_generator() -> AnswerGenerator:
 
 
 # 类型别名
-LLMClientDep = Annotated[OpenAIClient, Depends(get_llm_client)]
-EmbeddingServiceDep = Annotated[OpenAIEmbedding, Depends(get_embedding_service)]
+LLMClientDep = Annotated[LLMClient, Depends(get_llm_client)]
+EmbeddingServiceDep = Annotated[EmbeddingService, Depends(get_embedding_service)]
 VectorStoreDep = Annotated[ChromaVectorStore, Depends(get_vector_store)]
 GraphStoreDep = Annotated[Neo4jGraphStore, Depends(get_graph_store)]
 DocumentStoreDep = Annotated[DocumentStore, Depends(get_document_store)]

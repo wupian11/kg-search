@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 # 复制项目文件
 COPY pyproject.toml .
+COPY README.md .
 COPY src/ src/
 COPY scripts/ scripts/
 
