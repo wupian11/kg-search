@@ -5,91 +5,16 @@
 """
 
 import json
-from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
 from kg_search.utils import generate_id, get_logger
 
-from .entity_extractor import Entity
+from .models import Entity, Relation
 from .prompts.relation_prompt import RELATION_EXTRACTION_PROMPT, RELATION_TYPES
+from .types import RelationType
 
 logger = get_logger(__name__)
-
-
-class RelationType(str, Enum):
-    """文博领域关系类型"""
-
-    BELONGS_TO_DYNASTY = "属于朝代"
-    EXCAVATED_FROM = "出土于"
-    COLLECTED_BY = "收藏于"
-    MADE_OF = "材质为"
-    CREATED_BY = "制作者"
-    DISCOVERED_BY = "发现者"
-    SAME_PERIOD = "同时期"
-    SIMILAR_STYLE = "风格相似"
-    TECHNIQUE_INHERIT = "工艺传承"
-    BELONGS_TO_CULTURE = "属于文化"
-    LOCATED_IN = "位于"
-    RELATED_TO = "相关"
-
-
-@dataclass
-class Relation:
-    """关系数据结构"""
-
-    id: str
-    source_entity_id: str
-    source_entity_name: str
-    target_entity_id: str
-    target_entity_name: str
-    relation_type: RelationType | str
-    description: str = ""
-    attributes: dict[str, Any] = field(default_factory=dict)
-    weight: float = 1.0
-    confidence: float = 1.0
-    source_doc_id: str = ""
-
-    def to_dict(self) -> dict[str, Any]:
-        """转换为字典"""
-        return {
-            "id": self.id,
-            "source_entity_id": self.source_entity_id,
-            "source_entity_name": self.source_entity_name,
-            "target_entity_id": self.target_entity_id,
-            "target_entity_name": self.target_entity_name,
-            "relation_type": self.relation_type.value
-            if isinstance(self.relation_type, RelationType)
-            else self.relation_type,
-            "description": self.description,
-            "attributes": self.attributes,
-            "weight": self.weight,
-            "confidence": self.confidence,
-            "source_doc_id": self.source_doc_id,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Relation":
-        """从字典创建关系"""
-        rel_type = data.get("relation_type", "")
-        try:
-            rel_type = RelationType(rel_type)
-        except ValueError:
-            pass
-
-        return cls(
-            id=data.get("id", generate_id("relation")),
-            source_entity_id=data.get("source_entity_id", ""),
-            source_entity_name=data.get("source_entity_name", ""),
-            target_entity_id=data.get("target_entity_id", ""),
-            target_entity_name=data.get("target_entity_name", ""),
-            relation_type=rel_type,
-            description=data.get("description", ""),
-            attributes=data.get("attributes", {}),
-            weight=data.get("weight", 1.0),
-            confidence=data.get("confidence", 1.0),
-            source_doc_id=data.get("source_doc_id", ""),
-        )
 
 
 class RelationExtractor:
@@ -125,12 +50,7 @@ class RelationExtractor:
             return []
 
         # 构建实体列表字符串
-        entities_str = "\n".join(
-            [
-                f"- {e.name} ({e.type.value if isinstance(e.type, Enum) else e.type})"
-                for e in entities
-            ]
-        )
+        entities_str = "\n".join([f"- {e.name} ({e.type_value})" for e in entities])
 
         prompt = RELATION_EXTRACTION_PROMPT.format(
             relation_types=RELATION_TYPES,
@@ -147,20 +67,22 @@ class RelationExtractor:
             result = json.loads(response)
             relations_data = result.get("relations", [])
 
-            # 构建实体名称到ID的映射
-            entity_name_to_id = {e.name: e.id for e in entities}
+            # 构建实体名称到实体的映射
+            entity_map = {e.name: e for e in entities}
 
             relations = []
             for data in relations_data:
-                # 查找实体ID
                 source_name = data.get("source_entity", "")
                 target_name = data.get("target_entity", "")
 
+                source_entity = entity_map.get(source_name)
+                target_entity = entity_map.get(target_name)
+
                 relation = Relation(
                     id=generate_id("relation"),
-                    source_entity_id=entity_name_to_id.get(source_name, ""),
+                    source_entity_id=source_entity.id if source_entity else "",
                     source_entity_name=source_name,
-                    target_entity_id=entity_name_to_id.get(target_name, ""),
+                    target_entity_id=target_entity.id if target_entity else "",
                     target_entity_name=target_name,
                     relation_type=data.get("relation_type", "相关"),
                     description=data.get("description", ""),
@@ -196,7 +118,7 @@ class RelationExtractor:
         # 按类型分组实体
         entities_by_type: dict[str, list[Entity]] = {}
         for entity in entities:
-            type_key = entity.type.value if isinstance(entity.type, Enum) else entity.type
+            type_key = entity.type_value
             if type_key not in entities_by_type:
                 entities_by_type[type_key] = []
             entities_by_type[type_key].append(entity)
@@ -209,12 +131,9 @@ class RelationExtractor:
             for dynasty in entities_by_type.get("朝代", []):
                 if artifact.attributes.get("dynasty") == dynasty.name:
                     relations.append(
-                        Relation(
-                            id=generate_id("rel"),
-                            source_entity_id=artifact.id,
-                            source_entity_name=artifact.name,
-                            target_entity_id=dynasty.id,
-                            target_entity_name=dynasty.name,
+                        Relation.from_entities(
+                            source=artifact,
+                            target=dynasty,
                             relation_type=RelationType.BELONGS_TO_DYNASTY,
                             source_doc_id=source_doc_id,
                         )
@@ -224,12 +143,9 @@ class RelationExtractor:
             for material in entities_by_type.get("材质", []):
                 if artifact.attributes.get("material") == material.name:
                     relations.append(
-                        Relation(
-                            id=generate_id("rel"),
-                            source_entity_id=artifact.id,
-                            source_entity_name=artifact.name,
-                            target_entity_id=material.id,
-                            target_entity_name=material.name,
+                        Relation.from_entities(
+                            source=artifact,
+                            target=material,
                             relation_type=RelationType.MADE_OF,
                             source_doc_id=source_doc_id,
                         )
@@ -239,12 +155,9 @@ class RelationExtractor:
             for location in entities_by_type.get("地点", []):
                 if artifact.attributes.get("location") == location.name:
                     relations.append(
-                        Relation(
-                            id=generate_id("rel"),
-                            source_entity_id=artifact.id,
-                            source_entity_name=artifact.name,
-                            target_entity_id=location.id,
-                            target_entity_name=location.name,
+                        Relation.from_entities(
+                            source=artifact,
+                            target=location,
                             relation_type=RelationType.EXCAVATED_FROM,
                             source_doc_id=source_doc_id,
                         )
@@ -253,12 +166,9 @@ class RelationExtractor:
             # 文物 -> 博物馆
             for museum in entities_by_type.get("收藏机构", []):
                 relations.append(
-                    Relation(
-                        id=generate_id("rel"),
-                        source_entity_id=artifact.id,
-                        source_entity_name=artifact.name,
-                        target_entity_id=museum.id,
-                        target_entity_name=museum.name,
+                    Relation.from_entities(
+                        source=artifact,
+                        target=museum,
                         relation_type=RelationType.COLLECTED_BY,
                         source_doc_id=source_doc_id,
                     )
@@ -267,12 +177,9 @@ class RelationExtractor:
             # 文物 -> 文化
             for culture in entities_by_type.get("文化", []):
                 relations.append(
-                    Relation(
-                        id=generate_id("rel"),
-                        source_entity_id=artifact.id,
-                        source_entity_name=artifact.name,
-                        target_entity_id=culture.id,
-                        target_entity_name=culture.name,
+                    Relation.from_entities(
+                        source=artifact,
+                        target=culture,
                         relation_type=RelationType.BELONGS_TO_CULTURE,
                         source_doc_id=source_doc_id,
                     )

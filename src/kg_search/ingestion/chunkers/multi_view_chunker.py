@@ -109,7 +109,7 @@ class MultiViewChunker:
     def _extract_common_metadata(self, artifact: dict[str, Any]) -> dict[str, Any]:
         """提取公共元数据"""
         # 解析年代
-        from kg_search.extraction.structured_extractor import (
+        from kg_search.extraction.utils import (
             extract_dynasty,
             normalize_year_to_ce,
         )

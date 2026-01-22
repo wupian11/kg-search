@@ -5,6 +5,7 @@ from .helpers import (
     count_tokens,
     extract_nested_value,
     generate_id,
+    generate_hash_id,
     load_json_file,
     load_jsonl_file,
 )
@@ -15,6 +16,7 @@ __all__ = [
     "setup_logging",
     "count_tokens",
     "generate_id",
+    "generate_hash_id",
     "load_json_file",
     "load_jsonl_file",
     "chunk_list",
